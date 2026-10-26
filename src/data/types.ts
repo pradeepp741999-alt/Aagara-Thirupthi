@@ -2,7 +2,7 @@
 // (User, Provider, Service Category, Service, Menu, Dish, Package, Location,
 // Availability, Enquiry, Booking, Rating/Review, Notification).
 
-export type ServiceCategoryId = 'catering' | 'decoration' | 'audio';
+export type ServiceCategoryId = 'catering' | 'decoration' | 'audio' | 'makeup';
 
 export interface ServiceCategory {
   id: ServiceCategoryId;
@@ -30,6 +30,22 @@ export interface Dish {
   price: number;
   veg: boolean;
   popular?: boolean;
+  image?: string;
+}
+
+export interface SpecialCombo {
+  id: string;
+  providerId: string;
+  providerName: string;
+  category: ServiceCategoryId;
+  name: string;
+  description: string;
+  includedItems: string[];
+  price: number;
+  originalPrice?: number;
+  image: string;
+  validUntil: string;
+  badge?: string;
 }
 
 export interface MenuPackage {
@@ -67,6 +83,7 @@ export interface Provider {
   district: string;
   areas: string[];
   distanceKm: number;
+  coordinates?: { lat: number; lng: number };
   rating: number;
   reviewCount: number;
   startingPrice: number;
@@ -84,14 +101,19 @@ export interface Provider {
   responseTime: string; // e.g. "Usually responds within 2 hours"
   yearsActive: number;
   contactNumber: string; // 10-digit, shared with the customer once an enquiry is submitted
+  calendar?: Record<string, 'available' | 'blocked' | 'booked'>;
 }
 
 export interface EventRequirement {
   eventType: string;
-  eventDate: string; // ISO date
+  eventDate: string; // ISO date (From date)
+  eventEndDate?: string; // ISO date (To date, for multi-day events/makeup)
   district: string;
   location: string;
-  guestCount: number;
+  guestCount: number; // For makeup: persons count
+  makeupPersonsCount?: number;
+  simultaneousStyling?: boolean; // Whether 2+ persons need styling at the exact same time
+  backupArtistNeeded?: boolean; // Whether assistant/backup artist is required for same-time styling
   category: ServiceCategoryId;
   budgetMin: number;
   budgetMax: number;
@@ -110,6 +132,8 @@ export type EnquiryStatus =
   | 'submitted'
   | 'provider_reviewing'
   | 'provider_responded'
+  | 'accepted'
+  | 'quote_sent'
   | 'customer_reviewing'
   | 'confirmation_pending'
   | 'confirmed'
@@ -124,8 +148,12 @@ export interface Enquiry {
   createdAt: string;
   eventType: string;
   eventDate: string;
+  eventEndDate?: string;
   location: string;
   guestCount: number;
+  makeupPersonsCount?: number;
+  simultaneousStyling?: boolean;
+  backupArtistAssigned?: boolean;
   items: EnquiryItem[];
   estimatedTotal: number;
   notes?: string;

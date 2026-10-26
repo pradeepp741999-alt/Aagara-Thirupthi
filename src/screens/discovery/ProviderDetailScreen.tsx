@@ -1,26 +1,42 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, FlatList, Dimensions } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, FlatList, Dimensions, Modal, Alert } from 'react-native';
 import { Image } from 'expo-image';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, spacing, type, radius, shadow } from '../../theme';
-import { Button, RatingStars, Chip, AvailabilityBadge, VerifiedBadge, Avatar } from '../../components';
+import { Button, RatingStars, Chip, AvailabilityBadge, VerifiedBadge, Avatar, MonthCalendar } from '../../components';
 import { getProviderById } from '../../data/providers';
 import { RootStackParamList } from '../../navigation/types';
 import { formatCurrency } from '../../utils/currency';
+import { formatLongDate } from '../../utils/date';
 import { useRequirementStore } from '../../store/useRequirementStore';
+import { useProviderStore } from '../../store/useProviderStore';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'ProviderDetail'>;
 
 const { width } = Dimensions.get('window');
 
-type Tab = 'about' | 'menu' | 'work' | 'reviews';
+type Tab = 'about' | 'menu' | 'availability' | 'work' | 'reviews';
 
 export function ProviderDetailScreen({ navigation, route }: Props) {
   const provider = getProviderById(route.params.providerId);
   const requirement = useRequirementStore((s) => s.requirement);
+  const updateRequirement = useRequirementStore((s) => s.updateRequirement);
   const [tab, setTab] = useState<Tab>('about');
+
+  const providerCalendar = useProviderStore((s) =>
+    provider ? s.getCalendarForProvider(provider.id) : {}
+  );
+  const availableDates = useProviderStore((s) =>
+    provider ? s.getAvailableDatesForProvider(provider.id) : []
+  );
+  const toggleDateStatus = useProviderStore((s) => s.toggleDateStatus);
+  const setDateStatus = useProviderStore((s) => s.setDateStatus);
+
+  const [selectedCalendarDate, setSelectedCalendarDate] = useState<string>(requirement.eventDate || '');
+  const [selectedCalendarEndDate, setSelectedCalendarEndDate] = useState<string>(requirement.eventEndDate || requirement.eventDate || '');
+  const [showProviderCalModal, setShowProviderCalModal] = useState<boolean>(false);
 
   if (!provider) {
     return (
@@ -37,6 +53,7 @@ export function ProviderDetailScreen({ navigation, route }: Props) {
   const tabs: { id: Tab; label: string }[] = [
     { id: 'about', label: 'About' },
     ...(hasMenu || provider.packages.length ? [{ id: 'menu' as Tab, label: hasMenu ? 'Menu & Pricing' : 'Packages' }] : []),
+    { id: 'availability', label: 'Availability' },
     { id: 'work', label: 'Previous Work' },
     { id: 'reviews', label: 'Reviews' },
   ];
@@ -128,6 +145,80 @@ export function ProviderDetailScreen({ navigation, route }: Props) {
             <MenuTab provider={provider} onSelectServices={() => navigation.navigate('DishSelection', { providerId: provider.id })} />
           )}
 
+          {tab === 'availability' && (
+            <View>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', marginBottom: spacing.sm }}>
+                <View style={{ flex: 1 }}>
+                  <Text style={[type.h3, { color: colors.ink }]}>Live Availability</Text>
+                  <Text style={[type.caption, { color: colors.muted, marginTop: 2 }]}>
+                    Showing opened dates for {provider.name}
+                  </Text>
+                </View>
+                <Pressable
+                  style={styles.providerEditBtn}
+                  onPress={() => setShowProviderCalModal(true)}
+                  hitSlop={6}
+                >
+                  <Ionicons name="options-outline" size={14} color={colors.primary} />
+                  <Text style={[type.tiny, { color: colors.primary, fontWeight: '700', marginLeft: 4 }]}>
+                    Provider: Manage
+                  </Text>
+                </Pressable>
+              </View>
+
+              <MonthCalendar
+                selectedDate={selectedCalendarDate}
+                endDate={provider.category === 'makeup' ? selectedCalendarEndDate : undefined}
+                onSelectDate={(iso) => {
+                  setSelectedCalendarDate(iso);
+                  updateRequirement({ eventDate: iso });
+                }}
+                onSelectEndDate={(iso) => {
+                  setSelectedCalendarEndDate(iso);
+                  updateRequirement({ eventEndDate: iso });
+                }}
+                allowRange={provider.category === 'makeup'}
+                statusMap={providerCalendar}
+                availableDates={availableDates}
+              />
+
+              {selectedCalendarDate ? (
+                <View style={[styles.selectedDateCard, shadow.sm]}>
+                  <View style={{ flex: 1 }}>
+                    <Text style={[type.caption, { color: colors.secondary, fontWeight: '700' }]}>
+                      Available for Booking
+                    </Text>
+                    <Text style={[type.bodyMedium, { color: colors.ink, marginTop: 2 }]}>
+                      {provider.category === 'makeup' && selectedCalendarEndDate && selectedCalendarEndDate !== selectedCalendarDate
+                        ? `${formatLongDate(selectedCalendarDate)} – ${formatLongDate(selectedCalendarEndDate)}`
+                        : formatLongDate(selectedCalendarDate)}
+                    </Text>
+                  </View>
+                  <Button
+                    label="Book Selected Date"
+                    size="sm"
+                    icon="arrow-forward"
+                    onPress={() => {
+                      updateRequirement({
+                        eventDate: selectedCalendarDate,
+                        eventEndDate: provider.category === 'makeup' ? (selectedCalendarEndDate || selectedCalendarDate) : selectedCalendarDate,
+                      });
+                      hasMenu || provider.packages.length
+                        ? navigation.navigate('DishSelection', { providerId: provider.id })
+                        : navigation.navigate('EnquiryForm', { providerId: provider.id });
+                    }}
+                  />
+                </View>
+              ) : (
+                <Text style={[type.caption, { color: colors.muted, textAlign: 'center', marginTop: spacing.xs }]}>
+                  {provider.category === 'makeup'
+                    ? 'Tap green dates to choose your From Date and To Date for makeover'
+                    : 'Tap any green date to choose it for your event'}
+                </Text>
+              )}
+            </View>
+          )}
+
           {tab === 'work' && (
             <>
               <Text style={[type.h3, { color: colors.ink, marginBottom: spacing.sm }]}>Previous Work</Text>
@@ -171,6 +262,75 @@ export function ProviderDetailScreen({ navigation, route }: Props) {
           style={{ flex: 1, marginLeft: spacing.lg }}
         />
       </View>
+
+      {/* Provider Availability Management Modal */}
+      <Modal
+        visible={showProviderCalModal}
+        transparent
+        animationType="slide"
+        onRequestClose={() => setShowProviderCalModal(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalSheet}>
+            <View style={styles.modalHeader}>
+              <View style={{ flex: 1 }}>
+                <Text style={[type.h2, { color: colors.ink }]}>Manage Dates (Provider)</Text>
+                <Text style={[type.caption, { color: colors.muted, marginTop: 2 }]}>
+                  {provider.name} · Tap dates to cycle Available / Booked / Blocked
+                </Text>
+              </View>
+              <Pressable onPress={() => setShowProviderCalModal(false)} style={styles.modalCloseBtn} hitSlop={8}>
+                <Ionicons name="close" size={20} color={colors.ink} />
+              </Pressable>
+            </View>
+
+            <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={{ paddingBottom: spacing.lg }}>
+              <MonthCalendar
+                mode="provider"
+                onToggleStatus={(iso) => toggleDateStatus(provider.id, iso)}
+                onSelectDate={(iso) => toggleDateStatus(provider.id, iso)}
+                statusMap={providerCalendar}
+              />
+
+              <View style={styles.providerActionRow}>
+                <Pressable
+                  style={styles.batchBtn}
+                  onPress={() => {
+                    const today = new Date();
+                    for (let d = 1; d <= 60; d++) {
+                      const dt = new Date(today);
+                      dt.setDate(today.getDate() + d);
+                      const day = dt.getDay();
+                      if (day === 0 || day === 5 || day === 6) {
+                        setDateStatus(provider.id, dt.toISOString().slice(0, 10), 'available');
+                      }
+                    }
+                    Alert.alert('Updated', 'All weekend dates marked Available for next 60 days.');
+                  }}
+                >
+                  <Ionicons name="checkmark-done" size={15} color={colors.success} />
+                  <Text style={[type.tiny, { color: colors.success, fontWeight: '700', marginLeft: 4 }]}>
+                    Open All Weekends
+                  </Text>
+                </Pressable>
+
+                <Pressable
+                  style={styles.batchBtn}
+                  onPress={() => {
+                    setShowProviderCalModal(false);
+                    Alert.alert('Saved', 'Availability updated! The User App now shows only your opened dates.');
+                  }}
+                >
+                  <Ionicons name="save-outline" size={15} color={colors.primary} />
+                  <Text style={[type.tiny, { color: colors.primary, fontWeight: '700', marginLeft: 4 }]}>
+                    Done & Sync
+                  </Text>
+                </Pressable>
+              </View>
+            </ScrollView>
+          </View>
+        </View>
+      </Modal>
     </View>
   );
 }
@@ -300,4 +460,71 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl, paddingVertical: spacing.md, paddingBottom: spacing.xl,
     borderTopLeftRadius: radius.xl, borderTopRightRadius: radius.xl,
   },
+  providerEditBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.primarySoft,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    borderRadius: radius.pill,
+    borderWidth: 1,
+    borderColor: colors.primary,
+  },
+  selectedDateCard: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.divider,
+    marginTop: spacing.sm,
+  },
+  modalOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.5)',
+    justifyContent: 'flex-end',
+  },
+  modalSheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xxl,
+    borderTopRightRadius: radius.xxl,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing.huge,
+    maxHeight: '85%',
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    marginBottom: spacing.md,
+  },
+  modalCloseBtn: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.md,
+    backgroundColor: colors.surfaceAlt,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginLeft: spacing.sm,
+  },
+  providerActionRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    marginTop: spacing.md,
+    gap: spacing.sm,
+  },
+  batchBtn: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surfaceAlt,
+    paddingVertical: 10,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.divider,
+  },
 });
+

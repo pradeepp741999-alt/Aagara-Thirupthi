@@ -1,11 +1,19 @@
-import { Provider, Dish, MenuPackage, Review } from './types';
+import { Provider, Dish, MenuPackage, Review, SpecialCombo } from './types';
 
 const img = (seed: string, w = 900, h = 560) => `https://picsum.photos/seed/${seed}/${w}/${h}`;
 
 let dishId = 0;
-const d = (name: string, category: string, price: number, veg: boolean, popular = false): Dish => {
+const d = (name: string, category: string, price: number, veg: boolean, popular = false, image?: string): Dish => {
   dishId += 1;
-  return { id: `dish-${dishId}`, name, category, price, veg, popular };
+  return {
+    id: `dish-${dishId}`,
+    name,
+    category,
+    price,
+    veg,
+    popular,
+    image: image || img(`dish-${name.toLowerCase().replace(/\s+/g, '-')}`, 400, 300),
+  };
 };
 
 let reviewId = 0;
@@ -593,6 +601,145 @@ const audioProvider3: Provider = {
   contactNumber: '9843210011',
 };
 
+const makeupProvider1: Provider = {
+  id: 'prov-glam-glow',
+  name: 'Glow & Glamour Bridal Studio',
+  category: 'makeup',
+  tagline: 'Celebrity bridal makeovers, HD & airbrush makeup in Salem',
+  coverImage: img('bridal-studio-cover', 900, 560),
+  logoColor: '#D946EF',
+  district: 'Salem',
+  areas: ['Fairlands', 'Alagapuram', 'Hasthampatti'],
+  distanceKm: 2.4,
+  rating: 4.8,
+  reviewCount: 142,
+  startingPrice: 12000,
+  pricingModel: 'package',
+  minCapacity: 1,
+  maxCapacity: 15,
+  availability: 'available',
+  verified: true,
+  veg: 'both',
+  description:
+    'Certified celebrity makeup artist specialising in South Indian bridal looks, muhurtham styling, reception glam and pre-wedding shoots with premium international products.',
+  menuCategories: [
+    {
+      name: 'Bridal Services',
+      dishes: [
+        d('HD Bridal Makeover (Muhurtham)', 'Bridal Services', 15000, true, true),
+        d('Airbrush Bridal Makeover', 'Bridal Services', 22000, true, true),
+        d('Reception Glam Look', 'Bridal Services', 12000, true),
+      ],
+    },
+    {
+      name: 'Styling & Draping',
+      dishes: [
+        d('Saree Draping & Box Folding', 'Styling & Draping', 1500, true, true),
+        d('Traditional Bridal Hairdo with Fresh Flowers', 'Styling & Draping', 3500, true),
+        d('Pre-pleating & Ironing', 'Styling & Draping', 800, true),
+      ],
+    },
+    {
+      name: 'Family & Guest Styling',
+      dishes: [
+        d('Party Makeup for Guests', 'Family & Guest Styling', 3500, true),
+        d('Mother of the Bride Package', 'Family & Guest Styling', 6000, true, true),
+        d('Groom Styling & Hair Setting', 'Family & Guest Styling', 4000, true),
+      ],
+    },
+  ],
+  packages: [
+    {
+      id: 'pkg-bridal-hd',
+      name: 'Signature HD Bridal Package',
+      pricePerPerson: 18000,
+      minGuests: 1,
+      includes: ['HD Makeup', 'Bridal Hairstyling', 'Saree Draping', 'Lashes & Lenses', 'Fresh Jasmine styling'],
+      veg: true,
+    },
+    {
+      id: 'pkg-bridal-combo',
+      name: 'Complete Wedding Combo (Muhurtham + Reception)',
+      pricePerPerson: 32000,
+      minGuests: 1,
+      includes: ['2 Complete Looks', 'Touch-up Kit', 'Mother Makeover (free)', 'Airbrush Upgrade'],
+      veg: true,
+    },
+  ],
+  portfolio: [img('bridal-1'), img('bridal-2'), img('bridal-3')],
+  reviews: [
+    r('Priya Darshini', avatarColors[4], 5, '3 weeks ago', 'Wedding', 'The muhurtham look was magical and lasted whole day without a crease! Highly recommended.', {
+      quality: 5,
+      communication: 5,
+      value: 5,
+      timeliness: 5,
+    }),
+    r('Swetha R.', avatarColors[2], 5, '1 month ago', 'Reception', 'Super friendly artist, listened carefully to what I wanted and made me feel so confident.', {
+      quality: 5,
+      communication: 5,
+      value: 4,
+      timeliness: 5,
+    }),
+  ],
+  responseTime: 'Usually responds within 1 hour',
+  yearsActive: 8,
+  contactNumber: '9843210012',
+};
+
+const makeupProvider2: Provider = {
+  id: 'prov-aura-artistry',
+  name: 'Aura Artistry by Divya',
+  category: 'makeup',
+  tagline: 'Natural radiant bridal & party makeup artist',
+  coverImage: img('aura-cover', 900, 560),
+  logoColor: '#EC4899',
+  district: 'Salem',
+  areas: ['Hasthampatti', 'Junction', 'Suramangalam'],
+  distanceKm: 4.1,
+  rating: 4.9,
+  reviewCount: 98,
+  startingPrice: 9000,
+  pricingModel: 'package',
+  minCapacity: 1,
+  maxCapacity: 10,
+  availability: 'available',
+  verified: true,
+  veg: 'both',
+  description:
+    'Specialist in dewy, long-lasting glass-skin bridal looks that enhance natural beauty. We travel across Salem, Namakkal and Erode for on-venue service.',
+  menuCategories: [
+    {
+      name: 'Bridal Packages',
+      dishes: [
+        d('Radiant Muhurtham Makeover', 'Bridal Packages', 12000, true, true),
+        d('Engagement Dewy Look', 'Bridal Packages', 9000, true),
+      ],
+    },
+  ],
+  packages: [
+    {
+      id: 'pkg-aura-bridal',
+      name: 'Bridal Essentials Package',
+      pricePerPerson: 14000,
+      minGuests: 1,
+      includes: ['Bridal Makeover', 'Hairstyling', 'Saree Pre-pleating', 'Trial Session'],
+      veg: true,
+    },
+  ],
+  portfolio: [img('aura-1'), img('aura-2')],
+  reviews: [
+    r('Deepika V.', avatarColors[0], 5, '2 weeks ago', 'Engagement', 'Very punctual and subtle makeup just like I asked!', {
+      quality: 5,
+      communication: 5,
+      value: 5,
+      timeliness: 5,
+    }),
+  ],
+  responseTime: 'Usually responds within 2 hours',
+  yearsActive: 5,
+  contactNumber: '9843210013',
+};
+
 export const providers: Provider[] = [
   provider1,
   provider2,
@@ -605,7 +752,69 @@ export const providers: Provider[] = [
   audioProvider1,
   audioProvider2,
   audioProvider3,
+  makeupProvider1,
+  makeupProvider2,
+];
+
+export const specialCombos: SpecialCombo[] = [
+  {
+    id: 'combo-wedding-feast',
+    providerId: 'prov-sri-annapoorna',
+    providerName: 'Sri Annapoorna Caterers',
+    category: 'catering',
+    name: 'Grand Wedding Feast Combo',
+    description: 'Complete traditional Tamil feast with live dosa counter and 3 specialty sweets',
+    includedItems: ['Welcome Drink', 'Mutton Chukka', 'Chicken Biriyani', '3 Veg Curries', 'Elaneer Payasam', 'Live Counter'],
+    price: 350,
+    originalPrice: 420,
+    image: img('wedding-feast', 800, 500),
+    validUntil: 'Valid till 31 Oct',
+    badge: 'Save 17%',
+  },
+  {
+    id: 'combo-floral-stage',
+    providerId: 'prov-royal-stage',
+    providerName: 'Royal Stage Decors',
+    category: 'decoration',
+    name: 'Royal Floral Stage + Entrance Combo',
+    description: 'Fresh exotic floral backdrop + grand tunnel entrance with warm fairy lights',
+    includedItems: ['24ft Floral Backdrop', 'Grand Floral Arch', 'LED Focus Lights', 'Red Carpet Walkway'],
+    price: 45000,
+    originalPrice: 55000,
+    image: img('royal-stage', 800, 500),
+    validUntil: 'Valid this wedding season',
+    badge: 'Popular',
+  },
+  {
+    id: 'combo-bridal-glam',
+    providerId: 'prov-glam-glow',
+    providerName: 'Glow & Glamour Bridal Studio',
+    category: 'makeup',
+    name: 'Muhurtham + Reception Bridal Combo',
+    description: 'HD Bridal makeover for both morning Muhurtham and evening Reception',
+    includedItems: ['HD Makeup (2 Looks)', 'Hairstyling & Flowers', 'Saree Draping (2 sets)', 'Complimentary Mother Makeover'],
+    price: 22000,
+    originalPrice: 28000,
+    image: img('bridal-glam', 800, 500),
+    validUntil: 'Limited weekend slots',
+    badge: 'Best Value',
+  },
+  {
+    id: 'combo-sangeet-sound',
+    providerId: 'prov-soundwave',
+    providerName: 'SoundWave Event Audio',
+    category: 'audio',
+    name: 'Sangeet DJ & Audio Blast Combo',
+    description: 'High-power sound system + DJ setup for high-energy Sangeet and Reception nights',
+    includedItems: ['Line-Array Speakers', 'Pioneer DJ Console', '4 Wireless Mics', 'Fog Machine + Strobe'],
+    price: 18000,
+    originalPrice: 22000,
+    image: img('sangeet-sound', 800, 500),
+    validUntil: 'Book 7 days in advance',
+    badge: 'Trending',
+  },
 ];
 
 export const getProviderById = (id: string) => providers.find((p) => p.id === id);
 export const getProvidersByCategory = (category: string) => providers.filter((p) => p.category === category);
+export const getSpecialCombos = () => specialCombos;

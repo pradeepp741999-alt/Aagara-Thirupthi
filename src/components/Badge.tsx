@@ -25,6 +25,8 @@ export const enquiryStatusMeta: Record<EnquiryStatus, { label: string; bg: strin
   submitted: { label: 'Enquiry Submitted', bg: colors.infoSoft, fg: colors.info, icon: 'paper-plane' },
   provider_reviewing: { label: 'Provider Reviewing', bg: colors.warningSoft, fg: colors.warning, icon: 'time' },
   provider_responded: { label: 'Provider Responded', bg: colors.primarySoft, fg: colors.primaryDark, icon: 'chatbubble-ellipses' },
+  accepted: { label: 'Accepted by Provider', bg: colors.successSoft, fg: colors.success, icon: 'checkmark-circle' },
+  quote_sent: { label: 'Quote Sent', bg: colors.primarySoft, fg: colors.primaryDark, icon: 'pricetag' },
   customer_reviewing: { label: 'Your Turn to Review', bg: colors.primarySoft, fg: colors.primaryDark, icon: 'alert-circle' },
   confirmation_pending: { label: 'Confirmation Pending', bg: colors.warningSoft, fg: colors.warning, icon: 'hourglass' },
   confirmed: { label: 'Confirmed', bg: colors.successSoft, fg: colors.success, icon: 'checkmark-circle' },

@@ -9,6 +9,8 @@ import { Button, Input } from '../../components';
 import { AuthStackParamList } from '../../navigation/types';
 import { useAuthStore } from '../../store/useAuthStore';
 
+import { authApi } from '../../api/authApi';
+
 type Props = NativeStackScreenProps<AuthStackParamList, 'Login'>;
 
 const HERO_HEIGHT = 220;
@@ -16,17 +18,28 @@ const HERO_HEIGHT = 220;
 export function LoginScreen({ navigation }: Props) {
   const [mobile, setMobile] = useState('');
   const [error, setError] = useState('');
+  const [loading, setLoading] = useState(false);
   const setMobileStore = useAuthStore((s) => s.setMobile);
 
-  const handleSendOtp = () => {
+  const handleSendOtp = async () => {
     const digits = mobile.replace(/\D/g, '');
     if (digits.length !== 10) {
       setError('Enter a valid 10-digit mobile number');
       return;
     }
     setError('');
-    setMobileStore(digits);
-    navigation.navigate('Otp', { mobile: digits });
+    setLoading(true);
+
+    try {
+      await authApi.sendOtp(digits);
+    } catch (err: any) {
+      console.warn('[LoginScreen] Cloud sendOtp warning:', err.message);
+      // If server returned an error or is offline, continue so user isn't blocked
+    } finally {
+      setLoading(false);
+      setMobileStore(digits);
+      navigation.navigate('Otp', { mobile: digits });
+    }
   };
 
   return (

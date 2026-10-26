@@ -2,6 +2,10 @@
 
 A location-based, multi-service event marketplace mobile app — built with React Native (Expo) and TypeScript. Customers discover, compare and book event service providers (catering first, with decoration and audio also included, and the architecture ready for photography, DJ, transport and more later) based on location, budget, ratings, menu/pricing and availability.
 
+> 📚 **Complete Documentation Guides:**
+> - [**Master Project Documentation (`PROJECT_DOCUMENTATION.md`)**](file:///d:/downloads/AagaraThirupthi/AagaraThirupthi/PROJECT_DOCUMENTATION.md) — Architecture, all 19 screens, data models, state stores, feature logic, and build steps.
+> - [**Full REST API Specification (`API_DOCUMENTATION.md`)**](file:///d:/downloads/AagaraThirupthi/AagaraThirupthi/API_DOCUMENTATION.md) — Screen-by-screen breakdown, 25 REST endpoints, request bodies, query params, responses, and errors.
+
 This build covers the **customer-facing app** end to end, using realistic local mock data (no backend required to try it out). A Provider portal and Admin panel can be added later on the same data model.
 
 ## What's included

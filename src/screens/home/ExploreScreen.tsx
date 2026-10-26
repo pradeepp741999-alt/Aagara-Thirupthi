@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
@@ -10,6 +10,7 @@ import { providers } from '../../data/providers';
 import { categories } from '../../data/categories';
 import { MainTabParamList, RootStackParamList } from '../../navigation/types';
 import { useRequirementStore } from '../../store/useRequirementStore';
+import { useProviderStore } from '../../store/useProviderStore';
 import { ServiceCategoryId } from '../../data/types';
 
 type Props = CompositeScreenProps<
@@ -22,15 +23,22 @@ export function ExploreScreen({ navigation }: Props) {
   const [activeCategory, setActiveCategory] = useState<ServiceCategoryId | 'all'>('all');
   const setCategory = useRequirementStore((s) => s.setCategory);
 
+  const storeProviders = useProviderStore((s) => s.providers);
+  const fetchProviders = useProviderStore((s) => s.fetchProviders);
+
+  useEffect(() => {
+    fetchProviders();
+  }, [fetchProviders]);
+
   const results = useMemo(() => {
-    let list = providers;
+    let list = storeProviders && storeProviders.length > 0 ? storeProviders : providers;
     if (activeCategory !== 'all') list = list.filter((p) => p.category === activeCategory);
     if (query.trim()) {
       const q = query.trim().toLowerCase();
       list = list.filter((p) => p.name.toLowerCase().includes(q) || p.tagline.toLowerCase().includes(q));
     }
     return [...list].sort((a, b) => b.rating - a.rating);
-  }, [activeCategory, query]);
+  }, [storeProviders, activeCategory, query]);
 
   return (
     <SafeAreaView style={styles.safe} edges={['top']}>

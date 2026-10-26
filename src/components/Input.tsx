@@ -16,7 +16,7 @@ export function Input({ label, icon, error, containerStyle, rightElement, prefix
   const [focused, setFocused] = useState(false);
   return (
     <View style={[{ marginBottom: spacing.lg }, containerStyle]}>
-      {label && <Text style={[type.bodyMedium, styles.label]}>{label}</Text>}
+      {label ? <Text style={[type.bodyMedium, styles.label]}>{label}</Text> : null}
       <View
         style={[
           styles.inputWrap,
@@ -26,8 +26,8 @@ export function Input({ label, icon, error, containerStyle, rightElement, prefix
           },
         ]}
       >
-        {icon && <Ionicons name={icon} size={18} color={colors.muted} style={{ marginRight: 8 }} />}
-        {prefix && <Text style={[type.body, { color: colors.ink, marginRight: 4 }]}>{prefix}</Text>}
+        {icon ? <Ionicons name={icon} size={18} color={colors.muted} style={{ marginRight: 8 }} /> : null}
+        {prefix ? <Text style={[type.body, { color: colors.ink, marginRight: 4 }]}>{prefix}</Text> : null}
         <TextInput
           placeholderTextColor={colors.faint}
           style={[type.body, styles.input, style]}
@@ -41,9 +41,9 @@ export function Input({ label, icon, error, containerStyle, rightElement, prefix
           }}
           {...rest}
         />
-        {rightElement}
+        {rightElement || null}
       </View>
-      {error && <Text style={[type.caption, { color: colors.danger, marginTop: 4 }]}>{error}</Text>}
+      {error ? <Text style={[type.caption, { color: colors.danger, marginTop: 4 }]}>{error}</Text> : null}
     </View>
   );
 }

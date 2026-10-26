@@ -20,7 +20,9 @@ function stepIndexFor(status: EnquiryStatus) {
     case 'submitted': return 0;
     case 'provider_reviewing': return 1;
     case 'provider_responded':
+    case 'quote_sent':
     case 'customer_reviewing': return 2;
+    case 'accepted':
     case 'confirmation_pending':
     case 'confirmed': return 3;
     case 'completed': return 4;
@@ -110,9 +112,28 @@ export function EnquiryDetailScreen({ navigation, route }: Props) {
         <Card style={{ marginTop: spacing.md }}>
           <Text style={[type.h3, { color: colors.ink, marginBottom: spacing.sm }]}>Event Details</Text>
           <DetailRow icon="calendar-outline" label="Event Type" value={enquiry.eventType} />
-          <DetailRow icon="today-outline" label="Event Date" value={formatLongDate(enquiry.eventDate)} />
+          <DetailRow
+            icon="today-outline"
+            label={enquiry.category === 'makeup' && enquiry.eventEndDate && enquiry.eventEndDate !== enquiry.eventDate ? 'Event Dates' : 'Event Date'}
+            value={
+              enquiry.category === 'makeup' && enquiry.eventEndDate && enquiry.eventEndDate !== enquiry.eventDate
+                ? `${formatLongDate(enquiry.eventDate)} to ${formatLongDate(enquiry.eventEndDate)}`
+                : formatLongDate(enquiry.eventDate)
+            }
+          />
           <DetailRow icon="location-outline" label="Location" value={enquiry.location} />
-          <DetailRow icon="people-outline" label="Guests" value={`${enquiry.guestCount}`} />
+          <DetailRow
+            icon="people-outline"
+            label={enquiry.category === 'makeup' ? 'Makeup Persons' : 'Guests'}
+            value={enquiry.category === 'makeup' ? `${enquiry.makeupPersonsCount || enquiry.guestCount} person(s)` : `${enquiry.guestCount}`}
+          />
+          {enquiry.category === 'makeup' && (enquiry.makeupPersonsCount || enquiry.guestCount) >= 2 && (
+            <DetailRow
+              icon="shield-checkmark-outline"
+              label="Stylist Staffing"
+              value={enquiry.simultaneousStyling ? 'Lead + Backup Artist Assigned (Same-Time)' : '1 Lead Artist (Sequential)'}
+            />
+          )}
         </Card>
 
         <Card style={{ marginTop: spacing.md }}>

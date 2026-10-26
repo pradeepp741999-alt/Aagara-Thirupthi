@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, Image } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, spacing, type, radius, shadow } from '../../theme';
@@ -106,6 +106,9 @@ export function DishSelectionScreen({ navigation, route }: Props) {
                         style={[styles.dishRow, selected && styles.dishRowSelected]}
                         onPress={() => toggleDish(dish.id, dish.name, dish.price)}
                       >
+                        {dish.image && (
+                          <Image source={{ uri: dish.image }} style={styles.dishThumbnail} />
+                        )}
                         <View style={[styles.vegMark, { borderColor: dish.veg ? colors.success : colors.danger }]}>
                           <View style={[styles.vegDot, { backgroundColor: dish.veg ? colors.success : colors.danger }]} />
                         </View>
@@ -162,6 +165,7 @@ const styles = StyleSheet.create({
     borderWidth: 1, borderColor: colors.divider, padding: spacing.md, marginBottom: spacing.sm,
   },
   dishRowSelected: { borderColor: colors.primary, backgroundColor: colors.primarySoft },
+  dishThumbnail: { width: 44, height: 44, borderRadius: radius.md, marginRight: spacing.sm, backgroundColor: colors.divider },
   vegMark: { width: 16, height: 16, borderWidth: 1.5, alignItems: 'center', justifyContent: 'center', borderRadius: 3 },
   vegDot: { width: 8, height: 8, borderRadius: 4 },
   footer: {

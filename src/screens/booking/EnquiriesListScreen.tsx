@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { View, Text, StyleSheet, FlatList, Pressable } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,7 +23,12 @@ type FilterTab = 'active' | 'completed' | 'cancelled';
 
 export function EnquiriesListScreen({ navigation }: Props) {
   const enquiries = useEnquiryStore((s) => s.enquiries);
+  const fetchEnquiries = useEnquiryStore((s) => s.fetchEnquiries);
   const [tab, setTab] = useState<FilterTab>('active');
+
+  useEffect(() => {
+    fetchEnquiries();
+  }, [fetchEnquiries]);
 
   const filtered = useMemo(() => {
     return enquiries.filter((e) => {

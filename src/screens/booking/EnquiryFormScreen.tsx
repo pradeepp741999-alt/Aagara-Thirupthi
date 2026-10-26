@@ -3,20 +3,19 @@ import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { NativeStackScreenProps } from '@react-navigation/native-stack';
 import { colors, spacing, type, radius } from '../../theme';
-import { ScreenHeader, Button, Input, Card, ProgressSteps, Chip, Stepper } from '../../components';
+import { ScreenHeader, Button, Input, Card, ProgressSteps, Chip, Stepper, MonthCalendar } from '../../components';
 import { getProviderById } from '../../data/providers';
 import { RootStackParamList } from '../../navigation/types';
 import { useCartStore } from '../../store/useCartStore';
 import { useRequirementStore } from '../../store/useRequirementStore';
 import { useEnquiryStore } from '../../store/useEnquiryStore';
 import { useAuthStore } from '../../store/useAuthStore';
+import { useProviderStore } from '../../store/useProviderStore';
 import { formatCurrency } from '../../utils/currency';
-import { formatLongDate, nextDays, toISODate, weekdayLabel } from '../../utils/date';
+import { formatLongDate } from '../../utils/date';
 import { eventTypes } from '../../data/seed';
 
 type Props = NativeStackScreenProps<RootStackParamList, 'EnquiryForm'>;
-
-const upcomingDays = nextDays(10, 3);
 
 export function EnquiryFormScreen({ navigation, route }: Props) {
   const provider = getProviderById(route.params.providerId);
@@ -26,25 +25,51 @@ export function EnquiryFormScreen({ navigation, route }: Props) {
   const submitEnquiry = useEnquiryStore((s) => s.submitEnquiry);
   const profile = useAuthStore((s) => s.profile);
 
+  const providerCalendar = useProviderStore((s) =>
+    provider ? s.getCalendarForProvider(provider.id) : undefined
+  );
+  const availableDates = useProviderStore((s) =>
+    provider ? s.getAvailableDatesForProvider(provider.id) : undefined
+  );
+
   const [location, setLocation] = useState(requirement.location || `${profile.location ? profile.location + ', ' : ''}${profile.district}`);
   const [notes, setNotes] = useState(requirement.notes || '');
   const [editingDetails, setEditingDetails] = useState(!requirement.eventDate);
   const [eventType, setEventType] = useState(requirement.eventType);
   const [eventDate, setEventDate] = useState(requirement.eventDate);
+  const isMakeup = provider?.category === 'makeup';
+  const [eventEndDate, setEventEndDate] = useState(requirement.eventEndDate || requirement.eventDate);
   const [guestCount, setGuestCount] = useState(requirement.guestCount);
+  const [simultaneousStyling, setSimultaneousStyling] = useState<boolean>(
+    requirement.simultaneousStyling !== undefined ? requirement.simultaneousStyling : true
+  );
 
   if (!provider) return null;
 
-  const handleSubmit = () => {
-    updateRequirement({ eventType, eventDate, guestCount, location, notes });
-    const enquiry = submitEnquiry({
+  const handleSubmit = async () => {
+    updateRequirement({
+      eventType,
+      eventDate,
+      eventEndDate: isMakeup ? eventEndDate : eventDate,
+      guestCount,
+      makeupPersonsCount: isMakeup ? guestCount : undefined,
+      simultaneousStyling: isMakeup && guestCount >= 2 ? simultaneousStyling : false,
+      backupArtistNeeded: isMakeup && guestCount >= 2 && simultaneousStyling,
+      location,
+      notes,
+    });
+    const enquiry = await submitEnquiry({
       providerId: provider.id,
       providerName: provider.name,
       category: provider.category,
       eventType,
       eventDate,
+      eventEndDate: isMakeup ? eventEndDate : eventDate,
       location,
       guestCount,
+      makeupPersonsCount: isMakeup ? guestCount : undefined,
+      simultaneousStyling: isMakeup && guestCount >= 2 ? simultaneousStyling : false,
+      backupArtistAssigned: isMakeup && guestCount >= 2 && simultaneousStyling,
       items: items.length > 0 ? items : [{ name: 'General enquiry', price: 0, qty: 1 }],
       notes,
     });
@@ -75,28 +100,102 @@ export function EnquiryFormScreen({ navigation, route }: Props) {
                 ))}
               </View>
 
-              <Text style={[type.caption, { color: colors.muted, marginBottom: 6 }]}>Event Date</Text>
-              <ScrollView horizontal showsHorizontalScrollIndicator={false} style={{ marginBottom: spacing.md }}>
-                {upcomingDays.map((d) => {
-                  const iso = toISODate(d);
-                  const active = eventDate === iso;
-                  return (
-                    <Pressable key={iso} style={[styles.dateCard, active && styles.dateCardActive]} onPress={() => setEventDate(iso)}>
-                      <Text style={[type.tiny, { color: active ? colors.white : colors.muted }]}>{weekdayLabel(d)}</Text>
-                      <Text style={[type.bodyMedium, { color: active ? colors.white : colors.ink, marginTop: 2 }]}>{d.getDate()}</Text>
-                    </Pressable>
-                  );
-                })}
-              </ScrollView>
+              <Text style={[type.caption, { color: colors.muted, marginBottom: 6 }]}>
+                {isMakeup ? 'Makeover Dates (From Date → To Date)' : 'Event Date (Month View)'}
+              </Text>
+              <MonthCalendar
+                selectedDate={eventDate}
+                endDate={isMakeup ? eventEndDate : undefined}
+                onSelectDate={setEventDate}
+                onSelectEndDate={setEventEndDate}
+                allowRange={isMakeup}
+                statusMap={providerCalendar}
+                availableDates={availableDates}
+              />
 
-              <Text style={[type.caption, { color: colors.muted, marginBottom: 6 }]}>Guest Count</Text>
-              <Stepper value={guestCount} onChange={setGuestCount} step={10} min={10} max={5000} suffix="guests" />
+              <Text style={[type.caption, { color: colors.muted, marginBottom: 6, marginTop: spacing.md }]}>
+                {isMakeup ? 'Number of Persons Requiring Makeup' : 'Guest Count'}
+              </Text>
+              <Stepper
+                value={guestCount}
+                onChange={setGuestCount}
+                step={isMakeup ? 1 : 10}
+                min={1}
+                max={isMakeup ? 30 : 5000}
+                suffix={isMakeup ? 'person(s)' : 'guests'}
+              />
+
+              {isMakeup && guestCount >= 2 && (
+                <View style={{ marginTop: spacing.md, padding: spacing.md, backgroundColor: colors.surfaceAlt, borderRadius: radius.lg, borderWidth: 1, borderColor: colors.border }}>
+                  <Text style={[type.bodyMedium, { fontWeight: '700', color: colors.ink, marginBottom: 4 }]}>
+                    Simultaneous Styling (Same Time)?
+                  </Text>
+                  <View style={{ flexDirection: 'row', gap: spacing.sm, marginVertical: spacing.xs }}>
+                    <Pressable
+                      onPress={() => setSimultaneousStyling(true)}
+                      style={{
+                        flex: 1,
+                        padding: spacing.sm,
+                        borderRadius: radius.md,
+                        backgroundColor: simultaneousStyling ? colors.primarySoft : colors.surface,
+                        borderWidth: 1.5,
+                        borderColor: simultaneousStyling ? colors.primary : colors.divider,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={[type.caption, { fontWeight: '700', color: simultaneousStyling ? colors.primaryDark : colors.ink }]}>
+                        Yes, Same Time
+                      </Text>
+                    </Pressable>
+                    <Pressable
+                      onPress={() => setSimultaneousStyling(false)}
+                      style={{
+                        flex: 1,
+                        padding: spacing.sm,
+                        borderRadius: radius.md,
+                        backgroundColor: !simultaneousStyling ? colors.primarySoft : colors.surface,
+                        borderWidth: 1.5,
+                        borderColor: !simultaneousStyling ? colors.primary : colors.divider,
+                        alignItems: 'center',
+                      }}
+                    >
+                      <Text style={[type.caption, { fontWeight: '700', color: !simultaneousStyling ? colors.primaryDark : colors.ink }]}>
+                        No, Staggered
+                      </Text>
+                    </Pressable>
+                  </View>
+                  <Text style={[type.tiny, { color: simultaneousStyling ? colors.success : colors.muted, marginTop: 4, lineHeight: 16 }]}>
+                    {simultaneousStyling
+                      ? '✓ 1 Lead Artist + 1 Backup/Assistant Artist assigned so all persons are ready simultaneously.'
+                      : '✓ 1 Lead Artist will style guests sequentially.'}
+                  </Text>
+                </View>
+              )}
             </>
           ) : (
             <>
               <SummaryRow icon="calendar-outline" label="Event Type" value={eventType} />
-              <SummaryRow icon="today-outline" label="Event Date" value={formatLongDate(eventDate)} />
-              <SummaryRow icon="people-outline" label="Guest Count" value={`${guestCount} guests`} />
+              <SummaryRow
+                icon="today-outline"
+                label={isMakeup && eventEndDate && eventEndDate !== eventDate ? 'Event Dates' : 'Event Date'}
+                value={
+                  isMakeup && eventEndDate && eventEndDate !== eventDate
+                    ? `${formatLongDate(eventDate)} – ${formatLongDate(eventEndDate)}`
+                    : formatLongDate(eventDate)
+                }
+              />
+              <SummaryRow
+                icon="people-outline"
+                label={isMakeup ? 'Makeover Persons' : 'Guest Count'}
+                value={isMakeup ? `${guestCount} person(s)` : `${guestCount} guests`}
+              />
+              {isMakeup && guestCount >= 2 && (
+                <SummaryRow
+                  icon="shield-checkmark-outline"
+                  label="Staffing"
+                  value={simultaneousStyling ? 'Lead + Backup Artist Assigned' : 'Sequential (1 Lead Artist)'}
+                />
+              )}
             </>
           )}
         </Card>
